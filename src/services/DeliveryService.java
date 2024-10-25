@@ -12,7 +12,7 @@ import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DeliveryService {
-    private final ConcurrentHashMap<String, User> users = new ConcurrentHashMap<>();
+    private final UserService userService;
     private final ConcurrentHashMap<String, Driver> drivers = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Order> orders = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Item> items = new ConcurrentHashMap<>();
@@ -49,12 +49,9 @@ public class DeliveryService {
         }
     }
 
-    public DeliveryService() {
+    public DeliveryService(UserService userService) {
+        this.userService = userService;
         assignmentThread.start();
-    }
-
-    public void registerUser(User user) {
-        users.put(user.getUserId(), user);
     }
 
     public void registerDriver(Driver driver) {
@@ -67,7 +64,7 @@ public class DeliveryService {
 
     public Order createOrder(String userId, String itemId) {
         validateItem(itemId);
-        validateUser(userId);
+        userService.validateUser(userId);
 
         String orderId = generateOrderId();
         Order order = new Order(orderId, userId, itemId);
@@ -154,13 +151,6 @@ public class DeliveryService {
             throw new IllegalArgumentException("Driver does not exist");
         }
         return driver;
-    }
-
-    private void validateUser(String userId) {
-        User user = users.get(userId);
-        if(user == null) {
-            throw new IllegalArgumentException("User does not exist");
-        }
     }
 
     private void validateItem(String itemId) {
