@@ -47,7 +47,7 @@ public class DeliveryService {
             if (availableDriver.isPresent()) {
                 System.out.println("Assigning driver: " + availableDriver.get().getDriverId() + " to order: " + order.getOrderId());
                 Driver driver = availableDriver.get();
-                driver.setAvailable(false);
+                driverService.setDriverAvailable(driver.getDriverId(), false);
                 order.assignDriver(driver.getDriverId());
             } else {
                 pendingOrders.offer(order);
@@ -83,13 +83,13 @@ public class DeliveryService {
             String driverId = order.getAssignedDriverId();
             if(driverId != null) {
                 Driver driver = driverService.getDriver(driverId);
-                driver.setAvailable(true);
+                driverService.setDriverAvailable(driver.getDriverId(), true);
             }
         }
     }
 
     public void pickupOrder(String driverId, String orderId) {
-        Driver driver = validateDriver(driverId);
+        Driver driver = driverService.getDriver(driverId);
         Order order = validateOrder(orderId);
 
         synchronized (order) {
@@ -113,18 +113,13 @@ public class DeliveryService {
             }
             order.updateStatus(OrderStatus.DELIVERED);
             Driver driver = driverService.getDriver(driverId);
-            driver.setAvailable(true);
+            driverService.setDriverAvailable(driver.getDriverId(), true);
         }
     }
 
     public OrderStatus getOrderStatus(String orderId) {
         Order order = validateOrder(orderId);
         return order.getStatus();
-    }
-
-    private boolean isDriverAvailable(String driverId) {
-        Driver driver = validateDriver(driverId);
-        return driver.isAvailable();
     }
     private String generateOrderId() {
         return "Order-" + UUID.randomUUID();
@@ -137,15 +132,6 @@ public class DeliveryService {
         }
         return order;
     }
-
-    private Driver validateDriver(String driverId) {
-        Driver driver = driverService.getDriver(driverId);
-        if(driver == null) {
-            throw new IllegalArgumentException("Driver does not exist");
-        }
-        return driver;
-    }
-
     private void validateItem(String itemId) {
         Item item = items.get(itemId);
         if(item == null) {
