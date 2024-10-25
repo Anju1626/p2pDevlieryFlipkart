@@ -36,7 +36,7 @@ public class Main {
         Thread.sleep(1000);
 
         deliveryService.pickupOrder(driver.getDriverId(), order.getOrderId());
-        System.out.println("Order picked up: " + order.getOrderId());
+        System.out.println("Order picked up: " + order.getOrderId() + " by driver: " + driver.getName());
 
         Thread.sleep(1000);
 

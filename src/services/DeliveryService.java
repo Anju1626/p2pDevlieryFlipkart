@@ -3,7 +3,6 @@ package services;
 import entities.Driver;
 import entities.Item;
 import entities.Order;
-import entities.User;
 import enums.OrderStatus;
 
 import java.util.Optional;
@@ -45,7 +44,7 @@ public class DeliveryService {
         synchronized (assignmentLock) {
             Optional<Driver> availableDriver = driverService.findAvailableDriver();
             if (availableDriver.isPresent()) {
-                System.out.println("Assigning driver: " + availableDriver.get().getDriverId() + " to order: " + order.getOrderId());
+                System.out.println("Assigning driver: " + availableDriver.get().getName() + " to order: " + order.getOrderId());
                 Driver driver = availableDriver.get();
                 driverService.setDriverAvailable(driver.getDriverId(), false);
                 order.assignDriver(driver.getDriverId());
