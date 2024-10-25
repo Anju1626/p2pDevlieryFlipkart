@@ -6,6 +6,7 @@ import factory.DriverFactory;
 import factory.ItemFactory;
 import factory.UserFactory;
 import services.DeliveryService;
+import services.DriverService;
 import services.UserService;
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
@@ -13,15 +14,16 @@ import services.UserService;
 public class Main {
     public static void main(String[] args) throws InterruptedException {
         UserService userService = new UserService();
+        DriverService driverService = new DriverService();
 
-        DeliveryService deliveryService = new DeliveryService(userService);
+        DeliveryService deliveryService = new DeliveryService(userService, driverService);
 
         User user = UserFactory.createUser("John Doe", "1234567890");
         Driver driver = DriverFactory.createDriver("Driver John", "1234567890");
         Item item = ItemFactory.createItem("Cake Item", 1);
 
         userService.registerUser(user);
-        deliveryService.registerDriver(driver);
+        driverService.registerDriver(driver);
         deliveryService.registerItem(item);
 
         Order order = deliveryService.createOrder(user.getUserId(), item.getItemId());
@@ -49,5 +51,8 @@ public class Main {
 
         deliveryService.markOrderDelivered(driver.getDriverId(), order.getOrderId());
         System.out.println("Order delivered: " + order.getOrderId());
+
+
+        System.out.println("------ All processing completed ------");
     }
 }

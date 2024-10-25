@@ -13,11 +13,17 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class DeliveryService {
     private final UserService userService;
-    private final ConcurrentHashMap<String, Driver> drivers = new ConcurrentHashMap<>();
+    private final DriverService driverService;
     private final ConcurrentHashMap<String, Order> orders = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Item> items = new ConcurrentHashMap<>();
     private final BlockingDeque<Order> pendingOrders = new java.util.concurrent.LinkedBlockingDeque<>();
     private final Object assignmentLock = new Object();
+
+    public DeliveryService(UserService userService, DriverService driverService) {
+        this.userService = userService;
+        this.driverService = driverService;
+        assignmentThread.start();
+    }
 
     private final Thread assignmentThread = new Thread(() -> {
         while (!Thread.currentThread().isInterrupted()) {
@@ -37,7 +43,7 @@ public class DeliveryService {
 
     private void assignDriverToOrder(Order order) {
         synchronized (assignmentLock) {
-            Optional<Driver> availableDriver = findAvailableDriver();
+            Optional<Driver> availableDriver = driverService.findAvailableDriver();
             if (availableDriver.isPresent()) {
                 System.out.println("Assigning driver: " + availableDriver.get().getDriverId() + " to order: " + order.getOrderId());
                 Driver driver = availableDriver.get();
@@ -47,15 +53,6 @@ public class DeliveryService {
                 pendingOrders.offer(order);
             }
         }
-    }
-
-    public DeliveryService(UserService userService) {
-        this.userService = userService;
-        assignmentThread.start();
-    }
-
-    public void registerDriver(Driver driver) {
-        drivers.put(driver.getDriverId(), driver);
     }
 
     public void registerItem(Item item) {
@@ -85,7 +82,7 @@ public class DeliveryService {
 
             String driverId = order.getAssignedDriverId();
             if(driverId != null) {
-                Driver driver = drivers.get(driverId);
+                Driver driver = driverService.getDriver(driverId);
                 driver.setAvailable(true);
             }
         }
@@ -115,7 +112,7 @@ public class DeliveryService {
                 throw new IllegalStateException("Order cannot be marked as delivered as it has not been picked up");
             }
             order.updateStatus(OrderStatus.DELIVERED);
-            Driver driver = drivers.get(driverId);
+            Driver driver = driverService.getDriver(driverId);
             driver.setAvailable(true);
         }
     }
@@ -123,10 +120,6 @@ public class DeliveryService {
     public OrderStatus getOrderStatus(String orderId) {
         Order order = validateOrder(orderId);
         return order.getStatus();
-    }
-
-    private Optional<Driver> findAvailableDriver() {
-        return drivers.values().stream().filter(Driver::isAvailable).findFirst();
     }
 
     private boolean isDriverAvailable(String driverId) {
@@ -146,7 +139,7 @@ public class DeliveryService {
     }
 
     private Driver validateDriver(String driverId) {
-        Driver driver = drivers.get(driverId);
+        Driver driver = driverService.getDriver(driverId);
         if(driver == null) {
             throw new IllegalArgumentException("Driver does not exist");
         }
